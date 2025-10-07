@@ -60,4 +60,18 @@ class ContactRepository extends ServiceEntityRepository
             ->getResult()
             ;
     }
+    /**
+     * @return Contact[] Returns an array of Contact objects
+     */
+    public function paginate(int $page, int $limit): array
+    {
+        $offset = ($page -1) * $limit;
+
+        return $this->createQueryBuilder('c')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 }
