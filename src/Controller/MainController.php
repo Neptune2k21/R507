@@ -56,7 +56,6 @@ final class MainController extends AbstractController
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $contact->setCreatedAt(new \DateTimeImmutable('now'));
-            $contact->setStatus('new');
 
             $em->persist($contact);
             $em->flush();
@@ -69,17 +68,32 @@ final class MainController extends AbstractController
         ]);
     }
 
-    #[Route('/liste', name: 'list')]
-    public function list(ContactRepository $repository, Request $request): Response
-    {
-        $search = $request->query->get('search');
-        $contacts = $search
-            ? $repository->search($search)
-            : $repository->findAll();
 
-        return $this->render('main/list.html.twig', [
-            'contacts' => $contacts,
-            'search' => $search,
+    #[Route("/liste/{page}", name: "list")]
+    public function list(ContactRepository $repository, Request $request, ?int $page = 1): Response
+    {
+        $limit = 2;
+        $search = $request->query->get("search");
+        $status = $request->query->get("status", "all");
+
+        if ($search) {
+            $contacts = $repository->search($search);
+        } elseif ($status === "all") {
+            $contacts = $repository->findAll();
+        } else {
+            $contacts = $repository->findBy(["status" => $status]);
+        }
+
+        $totalContacts = count($contacts);
+        $totalPages = ceil($totalContacts / $limit);
+        $contacts = array_slice($contacts, ($page - 1) * $limit, $limit);
+
+        return $this->render("main/list.html.twig", [
+            "contacts" => $contacts,
+            "currentPage" => $page,
+            "totalPages" => $totalPages,
+            "search" => $search,
+            "currentStatus" => $status,
         ]);
     }
 }
