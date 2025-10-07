@@ -16,7 +16,8 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: "root"
           MYSQL_DATABASE: "R507_test"
-        ports: ['3306:3306']
+        ports:
+          - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping --silent"
           --health-interval=10s
@@ -41,12 +42,14 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
 
-      - name: Wait for MySQL
+      - name: Wait for MySQL service
         run: |
-          until mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; do
+          echo "Waiting for MySQL to be ready..."
+          until mysqladmin ping -h mysql -uroot -proot --silent; do
             sleep 2
           done
-        
+          echo "MySQL is ready."
+
       - name: Create database
         run: php bin/console doctrine:database:create --if-not-exists
 
@@ -66,4 +69,4 @@ jobs:
         run: php -l $(find src -type f -name "*.php")
 
       - name: Run PHPUnit tests
-        run: APP_ENV=test php bin/phpunit
+        run: APP_ENV=test php bin/phpunit --testdox
