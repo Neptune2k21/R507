@@ -14,8 +14,8 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          DATABASE_URL: mysql://root:root@mysql:3306/R507_test?serverVersion=8.0
-          APP_ENV: test
+          MYSQL_ROOT_PASSWORD: "root"
+          MYSQL_DATABASE: "R507_test"
         ports: ['3306:3306']
         options: >-
           --health-cmd="mysqladmin ping --silent"
@@ -24,7 +24,7 @@ jobs:
           --health-retries=3
 
     env:
-      DATABASE_URL: mysql://root:root@127.0.0.1:3306/R507_test?serverVersion=8.0
+      DATABASE_URL: mysql://root:root@mysql:3306/R507_test?serverVersion=8.0
       APP_ENV: test
 
     steps:
