@@ -46,6 +46,9 @@ jobs:
           until mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; do
             sleep 2
           done
+        
+      - name: Create database
+        run: php bin/console doctrine:database:create --if-not-exists
 
       - name: Run migrations
         run: php bin/console doctrine:migrations:migrate --no-interaction
