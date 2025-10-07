@@ -1,0 +1,66 @@
+name: CI R507
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: R507_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    env:
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/R507_test?serverVersion=8.0
+      APP_ENV: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, intl, pdo_mysql, zip, gd
+          coverage: xdebug
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Wait for MySQL
+        run: |
+          until mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; do
+            sleep 2
+          done
+
+      - name: Run migrations
+        run: php bin/console doctrine:migrations:migrate --no-interaction
+
+      - name: Load fixtures
+        run: php bin/console doctrine:fixtures:load --no-interaction
+
+      - name: Lint YAML files
+        run: php bin/console lint:yaml config
+
+      - name: Lint Twig templates
+        run: php bin/console lint:twig templates
+
+      - name: Lint PHP files
+        run: php -l $(find src -type f -name "*.php")
+
+      - name: Run PHPUnit tests
+        run: ./bin/phpunit --testdox --colors=always
