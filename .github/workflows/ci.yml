@@ -14,8 +14,8 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: R507_test
+          DATABASE_URL: mysql://root:root@mysql:3306/R507_test?serverVersion=8.0
+          APP_ENV: test
         ports: ['3306:3306']
         options: >-
           --health-cmd="mysqladmin ping --silent"
