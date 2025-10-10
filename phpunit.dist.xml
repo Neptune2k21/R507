@@ -17,7 +17,6 @@
         <server name="SHELL_VERBOSITY" value="-1" />
         <server name="KERNEL_CLASS" value= "App\Kernel" />
         <server name="APP_BASE_DOMAIN" value="localhost" />
-        <server name="DATABASE_URL" value="mysql://root:root@mysql:3306/R507_test?serverVersion=8.0" />
 
     </php>
 
