@@ -56,6 +56,9 @@ jobs:
             sleep 2
           done
 
+      - name: Set DATABASE_URL
+        run: echo "DATABASE_URL=mysql://root:root@${MYSQL_HOST}:3306/R507_test?serverVersion=8.0" >> $GITHUB_ENV
+
       - name: Check DATABASE_URL
         run: php -r "echo getenv('DATABASE_URL').PHP_EOL;"
 
