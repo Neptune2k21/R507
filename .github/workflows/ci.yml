@@ -1,0 +1,84 @@
+name: CI R507
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0.33
+        env:
+          MYSQL_ROOT_PASSWORD: "root"
+          MYSQL_DATABASE: "R507_test"
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      APP_ENV: test
+      MYSQL_HOST: 127.0.0.1
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install -y mysql-client
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, intl, pdo_mysql, zip, gd
+          coverage: xdebug
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h $MYSQL_HOST -P 3306 -uroot -proot --silent; then
+              echo "MySQL is up!"
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+
+      - name: Set DATABASE_URL
+        run: echo "DATABASE_URL=mysql://root:root@${MYSQL_HOST}:3306/R507_test?serverVersion=8.0" >> $GITHUB_ENV
+
+      - name: Check DATABASE_URL
+        run: php -r "echo getenv('DATABASE_URL').PHP_EOL;"
+
+      - name: Create database
+        run: php bin/console doctrine:database:create --if-not-exists
+
+      - name: Run migrations
+        run: php bin/console doctrine:migrations:migrate --no-interaction
+
+      - name: Load fixtures
+        run: php bin/console doctrine:fixtures:load --no-interaction
+
+      - name: Lint YAML files
+        run: php bin/console lint:yaml config
+
+      - name: Lint Twig templates
+        run: php bin/console lint:twig templates
+
+      - name: Lint PHP files
+        run: php -l $(find src -type f -name "*.php")
+
+      - name: Run PHPUnit tests
+        run: APP_ENV=test php bin/phpunit --testdox

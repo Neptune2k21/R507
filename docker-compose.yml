@@ -14,6 +14,8 @@ services:
         condition: service_healthy
     networks:
       - symfony_net
+    environment:
+      MYSQL_HOST: mysql
 
   mysql:
     image: mysql:8.0
