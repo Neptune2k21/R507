@@ -1,0 +1,50 @@
+name: CD R507 - Déploiement FTP
+
+on:
+  push:
+    branches: [ master ] 
+  workflow_dispatch:       
+
+jobs:
+  deploy:
+    name: Déploiement FTP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Installation des dépendances PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, intl, pdo_mysql, zip, gd
+      - run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Nettoyage du projet avant déploiement
+        run: |
+          rm -rf vendor
+          rm -rf var/cache/*
+          rm -rf node_modules || true
+
+      - name: Déploiement via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          protocol: ftp
+          server-dir: /
+          local-dir: ./
+          exclude: |
+            **/.git*
+            **/.github*
+            **/node_modules/**
+            **/vendor/**
+            **/tests/**
+            **/var/**
+            **/*.yml
+            **/*.yaml
+            **/*.xml
+            **/*.lock
